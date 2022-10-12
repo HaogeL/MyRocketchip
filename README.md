@@ -10,7 +10,7 @@ Based on [chipsalliance/rocket-chip](https://github.com/chipsalliance/rocket-chi
     - Or hidden Jtag interface driven by Xilinx Bscan2 primitive, which is compatible with OpenOCD
 
 ## To build RTL
-
+Setup your own env by following instructions in [rocket-chip](https://github.com/chipsalliance/rocket-chip) first.
 ```bash
 git clone https://github.com/HaogeL/MyRocketchip.git
 cd MyRocketchip
@@ -19,7 +19,9 @@ cd rocket-chip
 git checkout tags/v1.6
 git apply ../MyRocketchip.patch
 cd vsim
-make clean && make verilog CONFIG=freechips.rocketchip.system.MyRocketchipConfig MODEL=MysRocketchip
+make clean && make verilog CONFIG=freechips.rocketchip.system.MyRocketchipConfig MODEL=MyRocketchip
 # to build hide Jtag interface
-make clean && make verilog CONFIG=freechips.rocketchip.system.MyRocketchipConfig MODEL=MysRocketchipOpenOCD
+make clean && make verilog CONFIG=freechips.rocketchip.system.MyRocketchipConfig MODEL=MyRocketchipOpenOCD
 ```
+
+Check the generated RTL under *rocket-chip/vsim/generated-src*
