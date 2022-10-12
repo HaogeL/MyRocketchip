@@ -1,8 +1,7 @@
-# MyRocketchip
-An affable rocketchip
+#An affable rocketchip
 [![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
 
-Based on [chipsalliance/rocket-chip](https://github.com/chipsalliance/rocket-chip), an affable single core Rocktchip is configured, with the following features (customizable by updating fields in *MyRocketchipConfig* class): 
+Based on [chipsalliance/rocket-chip@tags/v1.6](https://github.com/chipsalliance/rocket-chip/tree/v1.6), an affable single core Rocktchip is configured, with the following features (customizable by updating fields in *MyRocketchipConfig* class): 
 - Single rocket core by default. 
 - 7 IRQs
 - 1 GB Memory range
@@ -25,3 +24,5 @@ make clean && make verilog CONFIG=freechips.rocketchip.system.MyRocketchipConfig
 ```
 
 Check the generated RTL under *rocket-chip/vsim/generated-src*
+
+## FPGA implementation 
