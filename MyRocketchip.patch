@@ -1,0 +1,253 @@
+diff --git a/src/main/scala/system/Bscane2Jtag.scala b/src/main/scala/system/Bscane2Jtag.scala
+new file mode 100644
+index 000000000..40eb6d4e5
+--- /dev/null
++++ b/src/main/scala/system/Bscane2Jtag.scala
+@@ -0,0 +1,83 @@
++//package Berzelius.IP.FPGA.RVChisel
++package freechips.rocketchip.system
++import chisel3._
++import chisel3.util._
++import chisel3.experimental.{ExtModule}
++
++object JTAGTUNNEL {
++  def apply (DUT_TCK: Clock, DUT_TMS: Bool, DUT_TDI: Bool, DUT_TDO:Bool, DUT_TDO_en: Bool): Unit = {
++    val inst_jtag_tunnel = Module(new JTAGTUNNEL())
++    DUT_TCK := inst_jtag_tunnel.jtag_tck
++    DUT_TMS := inst_jtag_tunnel.jtag_tms
++    DUT_TDI := inst_jtag_tunnel.jtag_tdi
++    inst_jtag_tunnel.jtag_tdo := DUT_TDO
++    inst_jtag_tunnel.jtag_tdo_en := DUT_TDO_en
++  }
++}
++class BUFGCE extends ExtModule {
++  val O = IO(Output(Bool()))
++  val CE = IO(Input(Bool()))
++  val I = IO(Input(Bool()))
++}
++
++class BSCANE2 extends ExtModule(Map("JTAG_CHAIN" -> 4)) {
++  val TDO = IO(Input(Bool()))
++  val CAPTURE = IO(Output(Bool()))
++  val DRCK = IO(Output(Bool()))
++  val RESET = IO(Output(Bool()))
++  val RUNTEST = IO(Output(Bool()))
++  val SEL = IO(Output(Bool()))
++  val SHIFT = IO(Output(Bool()))
++  val TCK = IO(Output(Bool()))
++  val TDI = IO(Output(Bool()))
++  val TMS = IO(Output(Bool()))
++  val UPDATE = IO(Output(Bool()))
++}
++
++class JTAGTUNNEL extends MultiIOModule {
++  val jtag_tck: Clock = IO(Output(Clock()))
++  val jtag_tms: Bool = IO(Output(Bool()))
++  val jtag_tdi: Bool = IO(Output(Bool()))
++  val jtag_tdo: Bool = IO(Input(Bool()))
++  val jtag_tdo_en: Bool = IO(Input(Bool()))
++
++  val bscane2: BSCANE2 = Module(new BSCANE2)
++  jtag_tdi := bscane2.TDI
++  bscane2.TDO := Mux(jtag_tdo_en, jtag_tdo, true.B)
++  val bufgce = Module(new BUFGCE)
++  bufgce.I := bscane2.TCK
++  bufgce.CE := bscane2.SEL
++  jtag_tck := bufgce.O.asClock
++
++  val posClock: Clock = bscane2.TCK.asClock
++  val negClock: Clock = (!bscane2.TCK).asClock
++
++  val tdiRegisterWire = Wire(Bool())
++  val shiftCounterWire = Wire(UInt(7.W))
++  withReset(!bscane2.SHIFT) {
++    withClock(posClock) {
++      val shiftCounter = RegInit(0.U(7.W))
++      val posCounter = RegInit(0.U(8.W))
++      val tdiRegister = RegInit(false.B)
++      posCounter := posCounter + 1.U
++      when(posCounter >= 1.U && posCounter <= 7.U) {
++        shiftCounter := Cat(bscane2.TDI, shiftCounter.head(6))
++      }
++      when(posCounter === 0.U) {
++        tdiRegister := !bscane2.TDI
++      }
++      tdiRegisterWire := tdiRegister
++      shiftCounterWire := shiftCounter
++    }
++    withClock(negClock) {
++      val negCounter = RegInit(0.U(8.W))
++      negCounter := negCounter + 1.U
++      jtag_tms := MuxLookup(negCounter, false.B, Array(
++        4.U -> tdiRegisterWire,
++        5.U -> true.B,
++        shiftCounterWire + 7.U -> true.B,
++        shiftCounterWire + 8.U -> true.B)
++      )
++    }
++  }
++}
+diff --git a/src/main/scala/system/MyConfig.scala b/src/main/scala/system/MyConfig.scala
+new file mode 100644
+index 000000000..74e052286
+--- /dev/null
++++ b/src/main/scala/system/MyConfig.scala
+@@ -0,0 +1,38 @@
++package freechips.rocketchip.system
++
++import freechips.rocketchip.config.Config
++import freechips.rocketchip.config._
++import freechips.rocketchip.subsystem._
++import freechips.rocketchip.devices.debug._
++import freechips.rocketchip.diplomacy._
++
++class WithJtagInfoConfig (
++                           idcodeVersion    : Int,      // chosen by manuf.
++                           idcodePartNum    : Int,      // Chosen by manuf.
++                           idcodeManufId    : Int,      // Assigned by JEDE
++                           debugIdleCycles  : Int
++                         ) extends Config((site, here, up) => { case JtagDTMKey=>
++  new JtagDTMConfig(
++    idcodeVersion   = idcodeVersion,
++    idcodePartNum   = idcodePartNum,
++    idcodeManufId   = idcodeManufId,
++    debugIdleCycles = debugIdleCycles
++  )
++})
++class WithMyMemPort extends Config((site, here, up) => {
++  case ExtMem => Some(MemoryPortParams(MasterPortParams(
++    base = x"8000_0000",
++    size = x"4000_0000",
++    beatBytes = site(MemoryBusKey).beatBytes,
++    idBits = 4), 1))
++})
++
++class MyRocketchipConfig extends Config(
++    new WithJtagDTM ++
++    new WithNBigCores(1) ++
++    new WithCoherentBusTopology ++
++    new WithJtagInfoConfig(0, 0, 0x489, 5) ++
++    new WithNExtTopInterrupts(7) ++
++    new WithMyMemPort ++
++    new BaseConfig
++)
+diff --git a/src/main/scala/system/MyRocketchip.scala b/src/main/scala/system/MyRocketchip.scala
+new file mode 100644
+index 000000000..06cdd38c5
+--- /dev/null
++++ b/src/main/scala/system/MyRocketchip.scala
+@@ -0,0 +1,100 @@
++package freechips.rocketchip.system
++
++import chisel3._
++import freechips.rocketchip.config.Parameters
++import freechips.rocketchip.devices.debug.Debug
++import freechips.rocketchip.diplomacy.LazyModule
++import freechips.rocketchip.subsystem._
++import freechips.rocketchip.devices.debug.JtagDTMKey
++import freechips.rocketchip.jtag._
++
++class MyRocketchip(implicit val p: Parameters) extends Module {
++  val LazyRocketchipOri = LazyModule(new ExampleRocketSystem)
++  val RocketchipOri= Module(LazyRocketchipOri.module)
++  //tie-off l2_frontend_bus
++  //LazyRocketchipOri.l2_frontend_bus_axi4.foreach(_.tieoff)
++  val io = IO(new Bundle {
++    val interrupts = Input(UInt(p(NExtTopInterrupts).W))
++    val mem_axi4 = RocketchipOri.outer.mem_axi4.head.cloneType
++    val mmio_axi4 = RocketchipOri.outer.mmio_axi4.head.cloneType
++    val frontbus_axi4 = Flipped(RocketchipOri.outer.l2_frontend_bus_axi4.head.cloneType)
++    val jtag = Flipped(new JTAGIO())
++  })
++
++  val systemJtag = RocketchipOri.debug.get.systemjtag.get
++
++  systemJtag.jtag.TCK := io.jtag.TCK
++  systemJtag.jtag.TMS := io.jtag.TMS
++  systemJtag.jtag.TDI := io.jtag.TDI
++  io.jtag.TDO := systemJtag.jtag.TDO
++
++  systemJtag.mfr_id := p(JtagDTMKey).idcodeManufId.U(11.W)
++  systemJtag.part_number := p(JtagDTMKey).idcodePartNum.U(16.W)
++  systemJtag.version := p(JtagDTMKey).idcodeVersion.U(4.W)
++  // MUST use async reset here
++  // otherwise the internal logic(e.g. TLXbar) might not function
++  systemJtag.reset := reset.asAsyncReset
++
++  // ndreset together with Module reset can reset all harts
++  // childReset also provide reset signal for pin hartIsInReset, see https://github.com/chipsalliance/rocket-chip/pull/2237
++  val childReset = reset.asBool | RocketchipOri.debug.map(_.ndreset).getOrElse(false.B)
++  RocketchipOri.reset := childReset
++  RocketchipOri.resetctrl.foreach { rc =>
++    rc.hartIsInReset.foreach {
++      _ := childReset
++    }
++  }
++
++  Debug.connectDebugClockAndReset(RocketchipOri.debug, clock)
++
++  io.mem_axi4 <> RocketchipOri.outer.mem_axi4.head
++  io.mmio_axi4 <> RocketchipOri.outer.mmio_axi4.head
++  RocketchipOri.interrupts := io.interrupts
++  RocketchipOri.outer.l2_frontend_bus_axi4.head <> io.frontbus_axi4
++
++  RocketchipOri.dontTouchPorts()
++}
++
++class MyRocketchipOpenOCD(implicit val p: Parameters) extends Module {
++  val LazyRocketchipOri = LazyModule(new ExampleRocketSystem)
++  val RocketchipOri= Module(LazyRocketchipOri.module)
++  //tie-off l2_frontend_bus
++  //LazyRocketchipOri.l2_frontend_bus_axi4.foreach(_.tieoff)
++  val io = IO(new Bundle {
++    val interrupts = Input(UInt(p(NExtTopInterrupts).W))
++    val mem_axi4 = RocketchipOri.outer.mem_axi4.head.cloneType
++    val mmio_axi4 = RocketchipOri.outer.mmio_axi4.head.cloneType
++    val frontbus_axi4 = Flipped(RocketchipOri.outer.l2_frontend_bus_axi4.head.cloneType)
++  })
++
++  val systemJtag = RocketchipOri.debug.get.systemjtag.get
++
++  //openocd based tunnel, nested tap from Xilinx Bscan
++  JTAGTUNNEL(systemJtag.jtag.TCK, systemJtag.jtag.TMS, systemJtag.jtag.TDI, systemJtag.jtag.TDO.data, systemJtag.jtag.TDO.driven)
++
++  systemJtag.mfr_id := p(JtagDTMKey).idcodeManufId.U(11.W)
++  systemJtag.part_number := p(JtagDTMKey).idcodePartNum.U(16.W)
++  systemJtag.version := p(JtagDTMKey).idcodeVersion.U(4.W)
++  // MUST use async reset here
++  // otherwise the internal logic(e.g. TLXbar) might not function
++  systemJtag.reset := reset.asAsyncReset
++
++  // ndreset together with Module reset can reset all harts
++  // childReset also provide reset signal for pin hartIsInReset, see https://github.com/chipsalliance/rocket-chip/pull/2237
++  val childReset = reset.asBool | RocketchipOri.debug.map(_.ndreset).getOrElse(false.B)
++  RocketchipOri.reset := childReset
++  RocketchipOri.resetctrl.foreach { rc =>
++    rc.hartIsInReset.foreach {
++      _ := childReset
++    }
++  }
++
++  Debug.connectDebugClockAndReset(RocketchipOri.debug, clock)
++
++  io.mem_axi4 <> RocketchipOri.outer.mem_axi4.head
++  io.mmio_axi4 <> RocketchipOri.outer.mmio_axi4.head
++  RocketchipOri.interrupts := io.interrupts
++  RocketchipOri.outer.l2_frontend_bus_axi4.head <> io.frontbus_axi4
++
++  RocketchipOri.dontTouchPorts()
++}
+diff --git a/vsim/Makefrag-verilog b/vsim/Makefrag-verilog
+index 0ec2530ad..d9e054819 100644
+--- a/vsim/Makefrag-verilog
++++ b/vsim/Makefrag-verilog
+@@ -15,8 +15,8 @@ $(generated_dir)/%.fir $(generated_dir)/%.d: $(ROCKET_CHIP_JAR) $(bootrom_img)
+ $(generated_dir)/%.v $(generated_dir)/%.conf: $(generated_dir)/%.fir $(ROCKET_CHIP_JAR)
+ 	mkdir -p $(dir $@)
+ 	$(FIRRTL) -i $< \
+-    -o $(generated_dir)/$*.v \
+     -X verilog \
++    -e verilog \
+     --infer-rw $(MODEL) \
+     --repl-seq-mem -c:$(MODEL):-o:$(generated_dir)/$*.conf \
+     -faf $(generated_dir)/$*.anno.json \
