@@ -25,13 +25,15 @@ make clean && make verilog CONFIG=freechips.rocketchip.system.MyRocketchipConfig
 Check the generated RTL under *rocket-chip/vsim/generated-src*
 
 ## Recreate Vivado project
-### XSDB compatible version
+
+### OpenOCD compatible version
 ```bash
 tar -zxvf MyRocketchipOpenOCD.tar
 cd MyRocketchipOpenOCD
 vivado -source MyRocketchip.tcl
 ```
-### OpenOCD compatible version
+
+### XSDB compatible version
 ```bash
 tar -zxvf MyRocketchipXSDB.tar
 cd MyRocketchipXSDB
