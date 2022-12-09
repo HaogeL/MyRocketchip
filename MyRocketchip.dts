@@ -1,0 +1,228 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "freechips,rocketchip-unknown-dev";
+	model = "freechips,rocketchip-unknown";
+	chosen {
+		bootargs = "earlycon console=ttyS0,115200n8";
+		stdout-path = "/soc/serial@60000000";
+	};
+	L15: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <1000000>;
+		L4: cpu@0 {
+			clock-frequency = <100000000>;
+			compatible = "sifive,rocket0", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <64>;
+			d-cache-size = <16384>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <32>;
+			device_type = "cpu";
+			hardware-exec-breakpoint-count = <1>;
+			i-cache-block-size = <64>;
+			i-cache-sets = <64>;
+			i-cache-size = <16384>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <32>;
+			mmu-type = "riscv,sv39";
+			next-level-cache = <&L10>;
+			reg = <0x0>;
+			riscv,isa = "rv64imafdc";
+			riscv,pmpgranularity = <4>;
+			riscv,pmpregions = <8>;
+			status = "okay";
+			timebase-frequency = <1000000>;
+			tlb-split;
+			L2: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+	L10: memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x0 0x40000000>;
+	};
+
+	clocks {
+		axi_clk: axi_clk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+		};
+	};
+
+	L14: soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "freechips,rocketchip-unknown-soc", "simple-bus";
+		ranges;
+		L6: clint@2000000 {
+			compatible = "riscv,clint0";
+			interrupts-extended = <&L2 3 &L2 7>;
+			reg = <0x0 0x2000000 0x0 0x10000>;
+			reg-names = "control";
+			interrupt-parent = <&L2>;
+		};
+		/*
+		L7: debug-controller@0 {
+			compatible = "sifive,debug-013", "riscv,debug-013";
+			debug-attach = "jtag";
+			interrupts-extended = <&L2 65535>;
+			reg = <0x0 0x0 0x0 0x1000>;
+			reg-names = "control";
+			interrupt-parent = <&L2>;
+		};
+		*/
+		L1: error-device@3000 {
+			compatible = "sifive,error0";
+			reg = <0x0 0x3000 0x0 0x1000>;
+		};
+		L5: interrupt-controller@c000000 {
+			#interrupt-cells = <1>;
+			compatible = "riscv,plic0";
+			interrupt-controller;
+			interrupts-extended = <&L2 11 &L2 9>;
+			reg = <0x0 0xc000000 0x0 0x4000000>;
+			reg-names = "control";
+			riscv,max-priority = <7>;
+			riscv,ndev = <10>;
+		};
+		clk100M: clk100M {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+		};
+		i2c0: i2c@60080000 {
+                        compatible = "xlnx,xps-iic-2.00.a";
+                        reg = <0x0 0x60080000 0x0 0x10000>;
+                        #size-cells = <0>;
+                        #address-cells = <1>;
+                        clock-frequency = <1000>;
+                        interrupt-parent = <&L5>;
+                        interrupts = <7>;
+                        clocks = <&clk100M>;
+
+                        // GPIO Expander
+                        tca6416a: gpio@20 {
+                                compatible = "ti,tca6416";
+                                reg = <0x20>;
+                                #gpio-cells = <2>;
+                                gpio-controller;
+                        };
+                };
+		axi_ethernet_0: ethernet@60040000 {
+			axistream-connected = <&axi_ethernet_0_dma>;
+			clock-frequency = <100000000>;
+			compatible = "xlnx,axi-ethernet-7.2", "xlnx,axi-ethernet-1.00.a";
+			device_type = "network";
+			interrupt-parent = <&L5>;
+			interrupts = <3 4>;
+			local-mac-address = [00 11 22 33 44 55];
+			phy-handle = <&axi_ethernet_0phy3>;
+			phy-mode = "sgmii";
+			reg = <0x0 0x60040000 0x0 0x40000>;
+			xlnx,include-dre ;
+			xlnx,num-queues = /bits/ 16 <0x1>;
+			xlnx,phy-type = <0x4>;
+			xlnx,rxcsum = <0x0>;
+			xlnx,rxmem = <0x1000>;
+			xlnx,txcsum = <0x0>;
+			
+			clock-names = "s_axi_lite_clk", "axis_clk";
+			clocks = <&axi_clk>, <&axi_clk>;
+			
+			axi_ethernet_0_mdio: mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				/*reset-gpios = <&tca6416a 6 1>;
+				reset-delay-us = <2>;*/
+
+				axi_ethernet_0phy3: phy@3 {
+					#phy-cells = <1>;
+					device_type = "ethernet-phy";
+					reg = <3>;
+					ti,sgmii-ref-clock-output-enable;
+					ti,dp83867-rxctrl-strap-quirk;
+				};
+			};
+		};
+		axi_ethernet_0_dma: dma@60020000 {
+			compatible = "xlnx,eth-dma";
+			interrupts-extended = <&L5 5 &L5 6>;
+			reg = <0x0 0x60020000 0x0 0x10000>;
+			xlnx,addrwidth = /bits/ 8 <0x20>;
+			xlnx,include-dre ;
+			xlnx,num-queues = /bits/ 16 <0x1>;
+		};
+		ddr4_0: ddr4@60010000 {
+			compatible = "xlnx,ddr4-2.2";
+			reg = <0x0 0x60010000 0x0 0x100000>;
+		};
+		axi_uart0: serial@60000000 {
+			clocks = <&axi_clk>;
+			clock-frequency = <100000000>;
+			compatible = "ns16550a";
+			current-speed = <115200>;
+			device_type = "serial";
+			interrupt-names = "UartInt";
+			interrupt-parent = <&L5>;
+			interrupts = <1>;
+			port-number = <0>;
+			reg = <0x0 0x60000000 0x0 0x10000>;
+			reg-offset = <0x1000>;
+			reg-shift = <2>;
+			xlnx,is-a-16550 = <0x1>;
+		};
+		/*uart0: serial@60000000 {
+			compatible = "ns16550a";
+			reg = <0x0 0x60000000 0x0 0x10000>;
+			reg-shift = <2>;
+			reg-offset = <0x1000>;
+			clock-frequency = <100000000>;
+			interrupts-extended = <&L5 1>;
+		};*/
+		qspi0: spi@60030000 {
+			compatible = "xlnx,xps-spi-2.00.a";
+			reg = <0x0 0x60030000 0x0 0x1000>;
+			fifo-size = <256>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&L5>;
+                        interrupts = <2>;
+			xlnx,num-ss-bits = <0x1>;
+
+			// 256MB
+			flash@0 {
+				compatible = "mt25qu02g", "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <300000>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						label = "flash";
+						reg = <0x0 0x10000>;
+					};
+					partition@10000 {
+                                                label = "flash";
+                                                reg = <0x10000 0x7ff0000>;
+                                        };
+				};
+			};
+		};
+		L12: rom@10000 {
+			compatible = "sifive,rom0";
+			reg = <0x0 0x10000 0x0 0x10000>;
+			reg-names = "mem";
+		};
+	};
+};
