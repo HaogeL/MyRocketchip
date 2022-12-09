@@ -7,7 +7,7 @@ Based on [chipsalliance/rocket-chip@tags/v1.6](https://github.com/chipsalliance/
 - 1 GB Memory range
 - Two implementations are provided for debugging with OpenOCD and XSDB.
 
-## To build RTL
+## Build RTL
 Setup your own env by following instructions in [rocket-chip](https://github.com/chipsalliance/rocket-chip) first.
 ```bash
 git clone https://github.com/HaogeL/MyRocketchip.git
@@ -39,12 +39,14 @@ tar -zxvf MyRocketchipXSDB.tar
 cd MyRocketchipXSDB
 vivado -source MyRocketchipXSDB.tcl
 ```
-## Build Linux
+## Build Software
+### Busybox
 ```bash
 cd MyRocketchip
 git submodule update --init --recursive busybox
 cd busybox
-git checkout -b 1_35_stable
+git checkout tags/1_33_2
 mv ../busybox.config ./.config
 make CROSS_COMPILE=riscv64-linux-gnu-
 ```
+### Linux kernel
