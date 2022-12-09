@@ -12,7 +12,7 @@ Setup your own env by following instructions in [rocket-chip](https://github.com
 ```bash
 git clone https://github.com/HaogeL/MyRocketchip.git
 cd MyRocketchip
-git submodule update --init --recursive
+git submodule update --init --recursive rocket-chip
 cd rocket-chip
 git checkout tags/v1.6
 git apply ../MyRocketchip.patch
@@ -40,3 +40,11 @@ cd MyRocketchipXSDB
 vivado -source MyRocketchipXSDB.tcl
 ```
 ## Build Linux
+```bash
+cd MyRocketchip
+git submodule update --init --recursive busybox
+cd busybox
+git checkout -b 1_35_stable
+mv ../busybox.config ./.config
+make CROSS_COMPILE=riscv64-linux-gnu-
+```
