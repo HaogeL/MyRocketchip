@@ -78,3 +78,19 @@ git apply phy.patch
 cp ../rootfs.cpio.gz .
 make ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- vmlinux
 ```
+
+### Berkeley bootloader (BBL)
+```bash
+cd <MyRocketchip>
+git clone https://github.com/riscv/riscv-pk
+cd riscv-pk
+git checkout 7e9b671c0415dfd
+mkdir build
+cd build
+../configure --host=riscv64-linux-gnu \
+             --with-payload=../../linux/vmlinux \
+             --with-dts=../../MyRocketchip.dts \
+             --enable-logo
+make
+cp bbl.bin boot.bin
+```
