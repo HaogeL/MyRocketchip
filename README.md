@@ -42,11 +42,39 @@ vivado -source MyRocketchipXSDB.tcl
 ## Build Software
 ### Busybox
 ```bash
-cd MyRocketchip
+cd <MyRocketchip>
 git submodule update --init --recursive busybox
 cd busybox
 git checkout tags/1_33_2
-mv ../busybox.config ./.config
+cp ../busybox.config ./.config
 make CROSS_COMPILE=riscv64-linux-gnu-
 ```
+
+### Rootfs
+Build Busybox first.
+```bash
+cd <MyRocketchip>
+mkdir root
+cd root
+mkdir -p bin etc dev lib proc sbin sys tmp usr usr/bin usr/lib usr/sbin
+cp ../busybox/busybox bin/busybox
+ln -s bin/busybox sbin/init
+ln -s bin/busybox init
+cp ../inittab ./etc/inittab
+sudo mknod dev/console c 5 1
+find . | cpio --quiet -o -H newc | gzip > ../rootfs.cpio.gz
+```
+
 ### Linux kernel
+Build Rootfs first.
+```bash
+cd <MyRocketchip>
+git clone https://github.com/torvalds/linux.git
+cd linux
+git checkout v5.19
+cp ../linux.config ./.config
+cp ../driver.patch .
+git apply phy.patch
+cp ../rootfs.cpio.gz .
+make ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- vmlinux
+```
