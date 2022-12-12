@@ -5,10 +5,13 @@ Based on [chipsalliance/rocket-chip@tags/v1.6](https://github.com/chipsalliance/
 - Single rocket core by default. 
 - 7 IRQs
 - 1 GB Memory range
-- Two implementations are provided for debugging with OpenOCD and XSDB.
+- Two versions of implementation are provided, debuggable with OpenOCD and XSDB.
 
+## Env preparation
+- Vivado
+- Setup your own env by following instructions in [rocket-chip](https://github.com/chipsalliance/rocket-chip).
+- [riscv tool chain](https://github.com/riscv-collab/riscv-gnu-toolchain)
 ## Build RTL
-Setup your own env by following instructions in [rocket-chip](https://github.com/chipsalliance/rocket-chip) first.
 ```bash
 git clone https://github.com/HaogeL/MyRocketchip.git
 cd MyRocketchip
@@ -25,18 +28,16 @@ make clean && make verilog CONFIG=freechips.rocketchip.system.MyRocketchipConfig
 Check the generated RTL under *rocket-chip/vsim/generated-src*
 
 ## Recreate Vivado project
-
+Note, the RTL files used in the Vivado project are generated from the last step. The difference is that, in the top RTL file, AXI signals names are updated to follow Vivado AXI naming convention, so that Vivado can infer AXI bus automatically. A vim script, *UpdateAXISignalNames*, is provided for this purpose.
 ### OpenOCD compatible version
 ```bash
-tar -zxvf MyRocketchipOpenOCD.tar
-cd MyRocketchipOpenOCD
+cd <MyRocketchip>/MyRocketchipOpenOCD
 vivado -source MyRocketchip.tcl
 ```
 
 ### XSDB compatible version
 ```bash
-tar -zxvf MyRocketchipXSDB.tar
-cd MyRocketchipXSDB
+cd <MyRocketchip>/MyRocketchipXSDB
 vivado -source MyRocketchipXSDB.tcl
 ```
 ## Build Software
@@ -74,7 +75,7 @@ cd linux
 git checkout v5.19
 cp ../linux.config ./.config
 cp ../driver.patch .
-git apply phy.patch
+git apply driver.patch
 cp ../rootfs.cpio.gz .
 make ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- vmlinux
 ```
@@ -96,7 +97,8 @@ cp bbl.bin boot.bin
 ```
 
 ## Load MyRocketchip and run on VCU128
-After Vivado project is recreated, program VCU128 with bitstream.
+Recreate Vivado project --> synthesis --> implementation --> generate bitstream --> programm FPGA, either from GUI or XSDB
+
 ### MyRocketchipXSDB 
 Enter Xilinx XSDB
 ```bash
@@ -114,10 +116,41 @@ Successfully downloaded /home/sprite/Desktop/MyRocketchip/riscv-pk/build/boot.bi
 xsdb% con -addr 0x80000000 
 ```
 ### MyRocketchipOpenOCD
+Disconnect all the connection with FPGA board, either from GUI or on XSDB. Otherwise, OpenOCD will have conflict.
+Use <MyRocketchip>/ftdi.cfg as configuration file for openocd
 ```bash
-
+openocd -f <MyRocketchip>/ftdi.cfg
 ```
-Connect a console to /dev/USB2 before "xsdb% con -addr 0x80000000", you will see a BBL logo and Linux messages before getting a linux terminal
+Open *riscv64-unknown-elf-gdb* in another terminal. Debug features are available now.
+```bash
+xx@xx:/$ /riscv/bin/riscv64-unknown-elf-gdb
+GNU gdb (GDB) 10.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv64-unknown-elf".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word".
+(gdb) target remote localhost:3333
+Remote debugging using localhost:3333
+warning: No executable has been specified and target does not support
+determining executable automatically.  Try using the "file" command.
+0x0000000000010058 in ?? ()
+(gdb) restore <MyRocketchip>/riscv-pk/build/boot.bin binary 0x80000000
+Restoring binary file /home/sprite/Desktop/MyRocketchip/riscv-pk/build/boot.bin into memory (0x80000000 to 0x815434c8)
+(gdb) set $pc=0x10000
+(gdb) c
+```
+### On a serial console with /dev/ttyUSB1
+BBL logo and Linux messages come out first before getting a Linux terminal
 ```bash
 bbl loader
               vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
