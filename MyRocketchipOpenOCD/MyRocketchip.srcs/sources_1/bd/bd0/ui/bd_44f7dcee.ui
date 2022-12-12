@@ -1,0 +1,77 @@
+{
+   "ActiveEmotionalView":"Default View",
+   "Default View_ScaleFactor":"0.360775",
+   "Default View_TopLeft":"-202,-39",
+   "ExpandedHierarchyInLayout":"",
+   "guistr":"# # String gsaved with Nlview 7.0r4  2019-12-20 bk=1.5203 VDI=41 GEI=36 GUI=JA:10.0 TLS
+#  -string -flagsOSRD
+preplace port ddr4_sdram -pg 1 -lvl 8 -x 2960 -y 60 -defaultsOSRD
+preplace port default_100mhz_clk -pg 1 -lvl 0 -x -10 -y 1330 -defaultsOSRD
+preplace port iic_0 -pg 1 -lvl 8 -x 2960 -y 530 -defaultsOSRD
+preplace port mdio_mdc -pg 1 -lvl 8 -x 2960 -y 630 -defaultsOSRD
+preplace port rs232_uart_1 -pg 1 -lvl 8 -x 2960 -y 740 -defaultsOSRD
+preplace port sgmii_lvds -pg 1 -lvl 8 -x 2960 -y 650 -defaultsOSRD
+preplace port sgmii_phyclk -pg 1 -lvl 0 -x -10 -y 660 -defaultsOSRD
+preplace port port-id_dummy_port_in -pg 1 -lvl 0 -x -10 -y 1260 -defaultsOSRD
+preplace port port-id_reset -pg 1 -lvl 0 -x -10 -y 1350 -defaultsOSRD
+preplace inst MyRocketchipO_0 -pg 1 -lvl 5 -x 1880 -y 130 -defaultsOSRD
+preplace inst axi_ethernet_0 -pg 1 -lvl 2 -x 650 -y 930 -defaultsOSRD
+preplace inst axi_ethernet_0_dma -pg 1 -lvl 3 -x 1040 -y 260 -defaultsOSRD
+preplace inst axi_iic_0 -pg 1 -lvl 7 -x 2720 -y 550 -defaultsOSRD
+preplace inst axi_interconnect_0 -pg 1 -lvl 6 -x 2260 -y 310 -defaultsOSRD
+preplace inst axi_quad_spi_0 -pg 1 -lvl 7 -x 2720 -y 370 -defaultsOSRD
+preplace inst axi_uart16550_0 -pg 1 -lvl 7 -x 2720 -y 750 -defaultsOSRD
+preplace inst ddr4_0 -pg 1 -lvl 7 -x 2720 -y 130 -defaultsOSRD
+preplace inst proc_sys_reset_clkout1 -pg 1 -lvl 1 -x 210 -y 520 -defaultsOSRD
+preplace inst rst_ddr4_0_333M -pg 1 -lvl 5 -x 1880 -y 340 -defaultsOSRD
+preplace inst smartconnect_0 -pg 1 -lvl 4 -x 1510 -y 200 -defaultsOSRD
+preplace inst xlconcat_0 -pg 1 -lvl 4 -x 1510 -y 470 -defaultsOSRD
+preplace netloc M00_ARESETN_1 1 5 2 2100 40 2460
+preplace netloc axi_ethernet_0_dma_mm2s_cntrl_reset_out_n 1 1 3 440 1340 NJ 1340 1230
+preplace netloc axi_ethernet_0_dma_mm2s_introut 1 3 1 1270 340n
+preplace netloc axi_ethernet_0_dma_mm2s_prmry_reset_out_n 1 1 3 400 1350 NJ 1350 1250
+preplace netloc axi_ethernet_0_dma_s2mm_introut 1 3 1 1260 360n
+preplace netloc axi_ethernet_0_dma_s2mm_prmry_reset_out_n 1 1 3 430 1360 NJ 1360 1240
+preplace netloc axi_ethernet_0_dma_s2mm_sts_reset_out_n 1 1 3 450 1330 NJ 1330 1220
+preplace netloc axi_ethernet_0_interrupt 1 2 2 860 470 NJ
+preplace netloc axi_ethernet_0_mac_irq 1 2 2 840 450 NJ
+preplace netloc axi_iic_0_iic2intc_irpt 1 3 5 1310 650 NJ 650 NJ 650 NJ 650 2920
+preplace netloc axi_quad_spi_0_ip2intc_irpt 1 3 5 1300 610 NJ 610 NJ 610 2510J 460 2920
+preplace netloc axi_uart16550_0_ip2intc_irpt 1 3 5 1290 660 NJ 660 NJ 660 NJ 660 2920
+preplace netloc ddr4_0_addn_ui_clkout1 1 0 8 20 410 400 310 840 70 1290 90 1680 40 2070 620 2490 280 2920
+preplace netloc ddr4_0_c0_ddr4_ui_clk 1 4 4 1680 240 2090 600 2520J 470 2940
+preplace netloc ddr4_0_c0_ddr4_ui_clk_sync_rst 1 0 8 30 420 NJ 420 NJ 420 1280J 350 1680 580 NJ 580 2470J 270 2930
+preplace netloc dummy_port_in_1 1 0 2 NJ 1260 NJ
+preplace netloc proc_sys_reset_clkout1_mb_reset 1 1 4 390J 60 NJ 60 NJ 60 1660
+preplace netloc proc_sys_reset_clkout1_peripheral_aresetn 1 1 6 420 330 850 80 1270 300 1670J 230 2080 670 2500
+preplace netloc reset_1 1 0 7 20J 620 410J 530 NJ 530 1270J 590 NJ 590 NJ 590 2460J
+preplace netloc xlconcat_0_dout 1 4 1 1660 160n
+preplace netloc MyRocketchipO_0_M_AXI_MEM 1 5 1 N 120
+preplace netloc MyRocketchipO_0_M_AXI_MMIO 1 5 1 2060 100n
+preplace netloc axi_ethernet_0_dma_M_AXIS_CNTRL 1 1 3 430 90 NJ 90 1230
+preplace netloc axi_ethernet_0_dma_M_AXIS_MM2S 1 1 3 450 100 NJ 100 1220
+preplace netloc axi_ethernet_0_dma_M_AXI_MM2S 1 3 1 N 180
+preplace netloc axi_ethernet_0_dma_M_AXI_S2MM 1 3 1 N 200
+preplace netloc axi_ethernet_0_dma_M_AXI_SG 1 3 1 N 160
+preplace netloc axi_ethernet_0_m_axis_rxd 1 2 1 820 210n
+preplace netloc axi_ethernet_0_m_axis_rxs 1 2 1 830 230n
+preplace netloc axi_ethernet_0_mdio 1 2 6 NJ 630 NJ 630 NJ 630 NJ 630 NJ 630 NJ
+preplace netloc axi_ethernet_0_sgmii 1 2 6 850J 640 NJ 640 NJ 640 NJ 640 NJ 640 2930J
+preplace netloc axi_iic_0_IIC 1 7 1 NJ 530
+preplace netloc axi_interconnect_0_M00_AXI 1 6 1 2430 110n
+preplace netloc axi_interconnect_0_M01_AXI 1 6 1 2450 270n
+preplace netloc axi_interconnect_0_M02_AXI 1 2 5 860 10 NJ 10 NJ 10 NJ 10 2420
+preplace netloc axi_interconnect_0_M03_AXI 1 1 6 440 20 NJ 20 NJ 20 NJ 20 NJ 20 2410
+preplace netloc axi_interconnect_0_M04_AXI 1 6 1 2480 330n
+preplace netloc axi_interconnect_0_M05_AXI 1 6 1 2440 130n
+preplace netloc axi_interconnect_0_M06_AXI 1 6 1 2420 370n
+preplace netloc axi_uart16550_0_UART 1 7 1 NJ 740
+preplace netloc ddr4_0_C0_DDR4 1 7 1 NJ 60
+preplace netloc default_100mhz_clk_1 1 0 7 10J 30 NJ 30 NJ 30 NJ 30 NJ 30 NJ 30 2490J
+preplace netloc sgmii_phyclk_1 1 0 2 NJ 660 NJ
+preplace netloc smartconnect_0_M00_AXI 1 4 1 1650 100n
+levelinfo -pg 1 -10 210 650 1040 1510 1880 2260 2720 2960
+pagesize -pg 1 -db -bbox -sgen -210 0 3110 1370
+"
+}
+
