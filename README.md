@@ -1,4 +1,4 @@
-# An affable Rocketchip Vivado implementation
+# An affable Rocketchip Vivado implementation on VCU128
 [![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
 
 Based on [chipsalliance/rocket-chip@tags/v1.6](https://github.com/chipsalliance/rocket-chip/tree/v1.6), an affable single core Rocktchip is configured, with the following features (customizable by updating fields in *MyRocketchipConfig* class): 
